@@ -4,8 +4,10 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { RecoilRoot } from 'recoil';
+import { ChakraProvider } from '@chakra-ui/react';
 import { Atoms } from './examples/Atoms';
 import Home from './components/Home';
+import { Selectors } from './examples/Selectors';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -13,12 +15,15 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <RecoilRoot>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/examples/atoms" element={<Atoms />} />
-        </Routes>
-      </Router>
+      <ChakraProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/examples/atoms" element={<Atoms />} />
+            <Route path="/examples/selectors" element={<Selectors />} />
+          </Routes>
+        </Router>
+      </ChakraProvider>
     </RecoilRoot>
   </React.StrictMode>
 );
