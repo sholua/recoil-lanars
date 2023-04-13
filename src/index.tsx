@@ -8,6 +8,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { Atoms } from './examples/Atoms';
 import Home from './components/Home';
 import { Selectors } from './examples/Selectors';
+import { Async } from './examples/Async';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -21,6 +22,7 @@ root.render(
             <Route path="/" element={<Home />} />
             <Route path="/examples/atoms" element={<Atoms />} />
             <Route path="/examples/selectors" element={<Selectors />} />
+            <Route path="/examples/async" element={<Async />} />
           </Routes>
         </Router>
       </ChakraProvider>
