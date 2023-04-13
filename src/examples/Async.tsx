@@ -1,7 +1,15 @@
+import { Button } from '@chakra-ui/button';
 import { Container, Heading, Text } from '@chakra-ui/layout';
 import { Select } from '@chakra-ui/select';
 import { Suspense, useState } from 'react';
-import { selectorFamily, useRecoilValue } from 'recoil';
+import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
+import {
+  atomFamily,
+  selectorFamily,
+  useRecoilValue,
+  useSetRecoilState,
+} from 'recoil';
+import { getWeather } from './fakeAPI';
 
 const userState = selectorFamily({
   key: 'user',
@@ -9,6 +17,7 @@ const userState = selectorFamily({
     const userData = await fetch(
       `https://jsonplaceholder.typicode.com/users/${userId}`
     ).then((res) => res.json());
+    if (userId === 4) throw new Error('User does not exist');
     return userData;
   },
 });
@@ -28,12 +37,66 @@ const UserData = ({ userId }: { userId: number }) => {
       <Text>
         <b>Phone:</b> {user.phone}
       </Text>
+      <Suspense fallback={<div>Loading weather...</div>}>
+        <UserWeather userId={userId} />
+      </Suspense>
+    </div>
+  );
+};
+
+const weatherFetchIdState = atomFamily({
+  key: 'weatherFetchId',
+  default: 0,
+});
+
+const useRefreshWeather = (userId: number) => {
+  const setFetchId = useSetRecoilState(weatherFetchIdState(userId));
+  return () => setFetchId((id) => id + 1);
+};
+
+const weatherState = selectorFamily({
+  key: 'weather',
+  get:
+    (userId: number) =>
+    ({ get }) => {
+      get(weatherFetchIdState(userId));
+
+      const user = get(userState(userId));
+      return getWeather(user.address.city);
+    },
+});
+
+const UserWeather = ({ userId }: { userId: number }) => {
+  const user = useRecoilValue(userState(userId));
+  const weather = useRecoilValue(weatherState(userId));
+  const refresh = useRefreshWeather(userId);
+
+  return (
+    <div>
+      <Text>
+        <b>Weather in {user.address.city}:</b> {weather}ºC
+      </Text>
+      <Text onClick={refresh}>(refresh weather)</Text>
+    </div>
+  );
+};
+
+const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
+  return (
+    <div>
+      <Heading as="h2" size="md" mb={1}>
+        Something went wrong
+      </Heading>
+      <Text mb={1}>{error.message}</Text>
+      <Button onClick={resetErrorBoundary}>Ok</Button>
     </div>
   );
 };
 
 export const Async = () => {
   const [userId, setUserId] = useState<undefined | number>(undefined);
+
+  console.log('userId', userId);
 
   return (
     <Container py={10}>
@@ -55,12 +118,21 @@ export const Async = () => {
         <option value="1">User 1</option>
         <option value="2">User 2</option>
         <option value="3">User 3</option>
+        <option value="4">User 4 (Throws)</option>
       </Select>
-      {userId !== undefined && (
-        <Suspense fallback={<div>Loading...</div>}>
-          <UserData userId={userId} />
-        </Suspense>
-      )}
+      <ErrorBoundary
+        FallbackComponent={ErrorFallback}
+        resetKeys={[userId]}
+        onReset={() => {
+          setUserId(undefined);
+        }}
+      >
+        {userId !== undefined && (
+          <Suspense fallback={<div>Loading...</div>}>
+            <UserData userId={userId} />
+          </Suspense>
+        )}
+      </ErrorBoundary>
     </Container>
   );
 };
